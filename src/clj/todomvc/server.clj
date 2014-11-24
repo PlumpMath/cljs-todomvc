@@ -15,7 +15,7 @@
         "</head>"
         "<body>"
         "<div>"
-        "<p id=\"clickable\">Click me!</p>"
+        "<p id=\"clickable\">Click me !!!!</p>"
         "</div>"
         "<script src=\"js/cljs.js\"></script>"
         "</body>"
@@ -26,7 +26,7 @@
       (response/redirect "/help.html")
       (render-app)))
 
-(def app 
+(def app
   (-> handler
     (resources/wrap-resource "public")))
 

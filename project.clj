@@ -17,5 +17,6 @@
                    :pretty-print true}
         :jar true}}}
   :main todomvc.server
-  :ring {:handler todomvc.server/app})
-
+  :ring {:handler todomvc.server/app}
+  :profiles {:dev {:plugins [[com.cemerick/austin "0.1.5"]]}}
+  )
