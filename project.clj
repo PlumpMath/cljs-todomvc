@@ -1,42 +1,58 @@
 (defproject todomvc "0.1.0-SNAPSHOT"
-  :description "FIXME: write this!"
+  :description "FIXME: write description"
   :url "http://example.com/FIXME"
-  :dependencies [[org.clojure/clojure "1.5.1"]
-                 [org.clojure/clojurescript "0.0-2197"]
+  :license {:name "Eclipse Public License"
+            :url "http://www.eclipse.org/legal/epl-v10.html"}
+
+  :source-paths ["src/clj" "src/cljs"]
+
+  :dependencies [[org.clojure/clojure "1.6.0"]
+                 [org.clojure/clojurescript "0.0-2371" :scope "provided"]
                  [ring "1.3.1"]
-                 [figwheel "0.1.5-SNAPSHOT"]]
+                 [compojure "1.2.0"]
+                 [enlive "1.1.5"]
+                 [om "0.7.3"]
+                 [figwheel "0.1.4-SNAPSHOT"]
+                 [environ "1.0.0"]
+                 [com.cemerick/piggieback "0.1.3"]
+                 [weasel "0.4.0-SNAPSHOT"]
+                 [leiningen "2.5.0"]]
+
   :plugins [[lein-cljsbuild "1.0.3"]
-            [lein-ring "0.8.10"]
-            [lein-figwheel "0.1.5-SNAPSHOT"]]
-  :hooks [leiningen.cljsbuild]
-  :source-paths ["src/clj"]
-  :cljsbuild {
-    :builds {
-      :main {
-        :source-paths ["src/cljs"]
-        :compiler {:output-to "resources/public/js/cljs.js"
-                   :output-dir "resources/public/js/compiled/out"
-                   :optimizations :none
-                   :pretty-print true}
-        :jar true}}}
-  :main todomvc.server
-  :ring {:handler todomvc.server/app}
-  ;;:profiles {:dev {:plugins [[com.cemerick/austin "0.1.5"]]}}
+            [lein-environ "1.0.0"]]
 
+  :min-lein-version "2.5.0"
 
-  :figwheel {
-   :http-server-root "public" ;; this will be in resources/
-   :server-port 3449          ;; default
+  :uberjar-name "todomvc.jar"
 
-   ;; CSS reloading (optional)
-   ;; :css-dirs has no default value
-   ;; if :css-dirs is set figwheel will detect css file changes and
-   ;; send them to the browser
-   :css-dirs ["resources/public/css"]
+  :cljsbuild {:builds {:app {:source-paths ["src/cljs"]
+                             :compiler {:output-to     "resources/public/js/app.js"
+                                        :output-dir    "resources/public/js/out"
+                                        :source-map    "resources/public/js/out.js.map"
+                                        :preamble      ["react/react.min.js"]
+                                        :externs       ["react/externs/react.js"]
+                                        :optimizations :none
+                                        :pretty-print  true}}}}
 
-   ;; Server Ring Handler (optional)
-   ;; if you want to embed a ring handler into the figwheel http-kit
-   ;; server
-   ;;:ring-handler example.server/handler
-  }
-)
+  :profiles {:dev {:repl-options {:init-ns todomvc.server
+                                  :nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
+
+                   :plugins [[lein-figwheel "0.1.4-SNAPSHOT"]]
+
+                   :figwheel {:http-server-root "public"
+                              :port 3449
+                              :css-dirs ["resources/public/css"]}
+
+                   :env {:is-dev true}
+
+                   :cljsbuild {:builds {:app {:source-paths ["env/dev/cljs"]}}}}
+
+             :uberjar {:hooks [leiningen.cljsbuild]
+                       :env {:production true}
+                       :omit-source true
+                       :aot :all
+                       :cljsbuild {:builds {:app
+                                            {:source-paths ["env/prod/cljs"]
+                                             :compiler
+                                             {:optimizations :advanced
+                                              :pretty-print false}}}}}})
