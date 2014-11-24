@@ -1,6 +1,7 @@
 (ns todomvc.server
   (:require [ring.adapter.jetty :as jetty]
             [ring.middleware.resource :as resources]
+            [ring.middleware.reload :as reload]
             [ring.util.response :as response])
   (:gen-class))
 
@@ -15,7 +16,7 @@
         "</head>"
         "<body>"
         "<div>"
-        "<p id=\"clickable\">Click me !!!!</p>"
+        "<p id=\"clickable\">Click me !</p>"
         "</div>"
         "<script src=\"js/cljs.js\"></script>"
         "</body>"
@@ -28,6 +29,7 @@
 
 (def app
   (-> handler
+    (reload/wrap-reload ["src"])
     (resources/wrap-resource "public")))
 
 (defn -main [& args]
