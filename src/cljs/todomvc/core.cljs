@@ -1,15 +1,14 @@
 (ns todomvc.core
-  (:require [om.core :as om :include-macros true]
-            [om.dom :as dom :include-macros true]))
+  (:require
+   [reagent.core :as reagent :refer [atom]]))
 
-(defonce app-state (atom {:text "Hello World!"}))
+(defonce state (atom []))
+
+(defn app []
+  [:div
+   [:header {:id "header"}
+    [:h1 "todos"]]])
 
 (defn main []
-  (om/root
-    (fn [app owner]
-      (reify
-        om/IRender
-        (render [_]
-          (dom/h1 nil (:text app)))))
-    app-state
-    {:target (. js/document (getElementById "app"))}))
+  (reagent/render-component [app] (.getElementById js/document "app"))
+  )
