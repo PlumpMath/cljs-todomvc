@@ -5,10 +5,13 @@
 (defonce state (atom []))
 
 (defn app []
-  [:div
-   [:header {:id "header"}
-    [:h1 "todos"]]])
+  [:section {:id "todoapp"}
+   [:div
+    [:header {:id "header"}
+     [:h1 "todos"]
+     [:input {:id "new-todo"
+              :placeholder "What needs to be done?"}
+      ]]]])
 
 (defn main []
-  (reagent/render-component [app] (.getElementById js/document "app"))
-  )
+  (reagent/render-component [app] (.getElementById js/document "app")))
