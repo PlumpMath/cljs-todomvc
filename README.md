@@ -4,9 +4,8 @@
 
 ```
 $ lein repl
-
-(run)
-(browser-repl)
+todomvc.server=> (run)
+todomvc.server=> (browser-repl)
 ```
 
-http://localhost:10555
+Open http://localhost:10555
