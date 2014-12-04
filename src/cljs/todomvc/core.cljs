@@ -5,7 +5,7 @@
    [reagent.core :as reagent :refer [atom]]))
 
 (def enter-key 13)
-(defonce state (atom {:editing 0 :todos []}))
+(defonce state (atom {:editing 0 :new-todo "" :todos ["foo", "bar", "baz", "bat"]}))
 (defonce events (chan))
 
 (defn log [x]
@@ -33,18 +33,39 @@
   (.persist event)
   (put! events event))
 
+(defn todo [content]
+  [:li
+   [:div {:class "view"}
+    [:input {:class "toggle"
+             :type "checkbox"}]
+    [:label content]
+    [:button {:class "destroy"}]
+    ]
+   ])
+
+(defn new-todo []
+  [:input {:id "new-todo"
+           :placeholder "What needs to be done?"
+           :onKeyDown queue-event
+           }
+   ]
+  )
+
 (defn app []
   [:div
    [:section {:id "todoapp"}
     [:div
      [:header {:id "header"}
       [:h1 "todos"]
-      [:input {:id "new-todo"
-               :placeholder "What needs to be done?"
-               :onKeyDown queue-event
-               ;;:onChange queue-event
-               }
-       ]]]]
+      (new-todo)
+      ]
+     [:section {:id "main"}
+      [:input {:id "toggle-all"
+               :type "checkbox"}]
+      [:ul {:id "todo-list"}
+       (map todo (-> @state :todos))
+      ]
+     ]]]
    [:footer {:id "info"}
     [:p "Double-click to edit a todo"]]
    ])
