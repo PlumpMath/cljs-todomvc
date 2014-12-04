@@ -11,6 +11,11 @@
 (defn log [x]
   (.log js/console (clj->js x)))
 
+(defn add-todo [state todo]
+  (-> state
+      (assoc :new-todo "")
+      (update-in [:todos] #(conj % todo))))
+
 (defn update-todo [m idx value]
   (assoc-in m [:todos idx] value))
 
@@ -26,7 +31,7 @@
 (defn update-state [action]
   (when action
     (case (:action action)
-      :add-todo (swap! state update-todo 0 (:value action))
+      :add-todo (swap! state add-todo (:value action))
       )))
 
 (defn queue-event [event]
