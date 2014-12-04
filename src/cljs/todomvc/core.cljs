@@ -23,15 +23,20 @@
   (if (= enter-key (.-keyCode event))
     {:action :add-todo :value (aget event "target" "value")}))
 
+(defn input [event]
+  {:action :update-todo :value (aget event "target" "value")})
+
 (defn process-event [event]
   (case (.-type event)
     "keydown" (keydown event)
+    "input" (input event)
     nil))
 
 (defn update-state [action]
   (when action
     (case (:action action)
       :add-todo (swap! state add-todo (:value action))
+      :update-todo (swap! state assoc :new-todo (:value action))
       )))
 
 (defn queue-event [event]
@@ -51,6 +56,8 @@
 (defn new-todo []
   [:input {:id "new-todo"
            :placeholder "What needs to be done?"
+           :value (:new-todo @state)
+           :onChange queue-event
            :onKeyDown queue-event
            }
    ]
@@ -79,8 +86,5 @@
   (reagent/render-component [app] (.getElementById js/document "app"))
   _(go (while true
          (let [event (<! events)]
-           (log (process-event event))
            (update-state (process-event event))
-           (log "state is")
-           (log @state)
            ))))
