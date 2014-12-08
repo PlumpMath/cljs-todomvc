@@ -4,7 +4,9 @@
    [cljs.core.async :as async :refer [put! chan <! >! close!]]
    [reagent.core :as reagent :refer [atom]]))
 
+(def present? (complement clojure.string/blank?))
 (def enter-key 13)
+
 (defonce state (atom {:editing 0 :new-todo "" :todos ["foo", "bar", "baz", "bat"]}))
 (defonce actions (chan))
 
@@ -34,8 +36,10 @@
       )))
 
 (defn keydown [event]
-  (if (= enter-key (.-keyCode event))
-    {:action :add-todo :value (aget event "target" "value")}))
+  (let [value (aget event "target" "value")]
+    (when (and (= enter-key (.-keyCode event))
+               (present? value))
+      {:action :add-todo :value value})))
 
 (defn input [event]
   {:action :update-todo :value (aget event "target" "value")})
