@@ -48,16 +48,32 @@
 (defn queue-action [action]
   (when action (put! actions action)))
 
+(defn class-set [classes]
+  (let [class (->> classes
+                  (filter (fn [[k,v]] v))
+                  (map (fn [[k v]] (name k)))
+                  (str/join " ")
+                  )]
+    {:class class}))
+
 (defn todo [idx content]
-  [:li
-   [:div {:class "view"}
-    [:input {:class "toggle"
-             :type "checkbox"}]
-    [:label content]
-    [:button {:class "destroy"
-              :onClick #(queue-action (destroy-todo-action idx))}]
-    ]
-   ])
+  (let [editing false]
+    [:li (class-set {:editing editing})
+     [:div {:class "view"}
+      [:input {:class "toggle"
+               :type "checkbox"
+               }]
+      [:label
+       {:on-double-click #(log "xxx")}
+       content]
+      [:button {:class "destroy"
+                :on-click #(queue-action (destroy-todo-action idx))}]
+      ]
+     (when editing
+       [:input {:class "edit"
+                :default-value "foo"}
+        ])
+     ]))
 
 (defn new-todo []
   [:input {:id "new-todo"
