@@ -14,8 +14,7 @@
 
 (defroutes routes
   (resources "/")
-  (resources "/react" {:root "react"})
-  (GET "/*" req (page)))
+  (GET "/" req (page)))
 
 (def http-handler
   (if is-dev?
@@ -29,7 +28,7 @@
       (let [port (Integer. (or port (env :port) 10555))]
         (print "Starting web server on port" port ".\n")
         (run-jetty http-handler {:port port
-                          :join? false}))))
+                                 :join? false}))))
   server)
 
 (defn -main [& [port]]
