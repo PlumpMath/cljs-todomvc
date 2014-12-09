@@ -1,6 +1,7 @@
 (ns todomvc.core
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require
+   [clojure.string :as str :refer [trim]]
    [cljs.core.async :as async :refer [put! chan <! >! close!]]
    [reagent.core :as reagent :refer [atom]]))
 
@@ -36,7 +37,7 @@
       )))
 
 (defn add-todo-action [event]
-  (let [value (aget event "target" "value")]
+  (let [value (trim (aget event "target" "value"))]
     (when (and (= enter-key (.-keyCode event))
                (present? value))
       {:action :add-todo :value value})))
