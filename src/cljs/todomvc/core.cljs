@@ -7,15 +7,17 @@
 (def present? (complement clojure.string/blank?))
 (def enter-key 13)
 
-(defonce state (atom {:editing 0 :new-todo "" :todos ["foo", "bar", "baz", "bat"]}))
+(defonce edit-buffer (atom ""))
+(defonce state (atom {:editing 0 :todos ["foo", "bar", "baz", "bat"]}))
 (defonce actions (chan))
 
 (defn log [x]
-  (.log js/console (clj->js x)))
+  (.log js/console (clj->js x))
+  x)
 
 (defn add-todo [state todo]
+  (reset! edit-buffer "")
   (-> state
-      (assoc :new-todo "")
       (update-in [:todos] #(conj % todo))))
 
 (defn update-todo [m idx value]
@@ -31,28 +33,22 @@
   (when action
     (case (:action action)
       :add-todo (swap! state add-todo (:value action))
-      :update-todo (swap! state assoc :new-todo (:value action))
       :destroy-todo (swap! state remove-todo (:idx action))
       )))
 
-(defn keydown [event]
+(defn add-todo-action [event]
   (let [value (aget event "target" "value")]
     (when (and (= enter-key (.-keyCode event))
                (present? value))
       {:action :add-todo :value value})))
 
-(defn input [event]
-  {:action :update-todo :value (aget event "target" "value")})
-
 (defn event->action [data event]
   (case (:action data)
-    :add-todo (keydown event)
-    :update-todo (input event)
+    :add-todo (add-todo-action event)
     :destroy-todo data
     nil))
 
 (defn queue-action [data event]
-  (.persist event)
   (when-let [action (event->action data event)]
     (put! actions action)))
 
@@ -69,10 +65,14 @@
 
 (defn new-todo []
   [:input {:id "new-todo"
+           :autocomplete="off"
            :placeholder "What needs to be done?"
-           :value (:new-todo @state)
-           :onChange (partial queue-action {:action :update-todo})
-           :onKeyDown (partial queue-action {:action :add-todo})
+           :value @edit-buffer
+           ;; core.async + reagent isn't fast enough to keep
+           ;; up with typing, so we edit the state directly instead
+           ;; of putting the action on a channel
+           :on-change #(reset! edit-buffer (-> % .-target .-value))
+           :on-key-down (partial queue-action {:action :add-todo})
            }
    ]
   )
@@ -98,7 +98,7 @@
 
 (defn main []
   (reagent/render-component [app] (.getElementById js/document "app"))
-  _(go (while true
+  (go (while true
          (let [action (<! actions)]
            (update-state action)
            ))))
