@@ -9,7 +9,8 @@
 (def enter-key 13)
 
 (defonce actions (chan))
-(defonce edit-buffer (atom ""))
+(defonce new-todo-buffer (atom ""))
+(defonce edit-todo-buffer (atom ""))
 (defonce state (atom {:editing 0 :todos ["foo", "bar", "baz", "bat"]}))
 
 (defn log [x]
@@ -20,11 +21,8 @@
   (vec (concat (subvec coll 0 n) (subvec coll (inc n)))))
 
 (defn add-todo! [state todo]
-  (reset! edit-buffer "")
+  (reset! new-todo-buffer "")
   (update-in state [:todos] #(conj % todo)))
-
-;;(defn update-todo! [m idx value]
-;;  (assoc-in m [:todos idx] value))
 
 (defn remove-todo! [state idx]
   (update-in state [:todos] #(remove-nth idx %)))
@@ -34,6 +32,13 @@
     (case (:action action)
       :add-todo (swap! state add-todo! (:value action))
       :destroy-todo (swap! state remove-todo! (:idx action))
+      :edit-todo (do
+                   (reset! edit-todo-buffer (:content action))
+                   (swap! state assoc-in [:editing] (:idx action)))
+      :save-todo (do
+                   (reset! edit-todo-buffer "")
+                   (swap! state assoc-in [:todos (:idx action)] (:content action))
+                   (swap! state assoc-in [:editing] nil))
       )))
 
 (defn add-todo-action [event]
@@ -44,6 +49,16 @@
 
 (defn destroy-todo-action [idx]
   {:idx idx :action :destroy-todo})
+
+(defn edit-todo-action [idx content]
+  {:idx idx :action :edit-todo :content content})
+
+(defn save-todo-action [idx event]
+  ;; todo - dedupe
+  (let [value (trim (aget event "target" "value"))]
+    (when (and (= enter-key (.-keyCode event))
+               (present? value))
+      {:idx idx :action :save-todo :content value})))
 
 (defn queue-action [action]
   (when action (put! actions action)))
@@ -56,34 +71,42 @@
                   )]
     {:class class}))
 
+(defn editing? [idx]
+  (= idx (:editing @state)))
+
+(defonce foo (atom "test"))
+
 (defn todo [idx content]
-  (let [editing false]
-    [:li (class-set {:editing editing})
+  (let [editing (editing? idx)]
+    [:li (merge {:key idx} (class-set {:editing editing}))
      [:div {:class "view"}
       [:input {:class "toggle"
                :type "checkbox"
                }]
       [:label
-       {:on-double-click #(log "xxx")}
+       {:on-double-click #(queue-action (edit-todo-action idx content))}
        content]
       [:button {:class "destroy"
                 :on-click #(queue-action (destroy-todo-action idx))}]
       ]
      (when editing
-       [:input {:class "edit"
-                :default-value "foo"}
-        ])
+         [:input {:class "edit"
+                  :value @edit-todo-buffer
+                  :on-change #(reset! edit-todo-buffer (-> % .-target .-value))
+                  :on-key-down #(queue-action (save-todo-action idx %))
+                  }
+          ])
      ]))
 
 (defn new-todo []
   [:input {:id "new-todo"
            :autocomplete="off"
            :placeholder "What needs to be done?"
-           :value @edit-buffer
+           :value @new-todo-buffer
            ;; core.async + reagent isn't fast enough to keep
            ;; up with typing, so we edit the state directly instead
            ;; of putting the action on a channel
-           :on-change #(reset! edit-buffer (-> % .-target .-value))
+           :on-change #(reset! new-todo-buffer (-> % .-target .-value))
            :on-key-down #(queue-action (add-todo-action %))
            }
    ]
@@ -101,10 +124,13 @@
       [:input {:id "toggle-all"
                :type "checkbox"}]
       [:ul {:id "todo-list"}
-       (map-indexed todo (-> @state :todos))
+       ;; force evaluation of lazy seq to avoid
+       ;; "Reactive deref not supported in seq" warning
+       (doall (map-indexed todo (-> @state :todos)))
       ]
      ]]]
    [:footer {:id "info"}
+    [:p @edit-todo-buffer]
     [:p "Double-click to edit a todo"]]
    ])
 

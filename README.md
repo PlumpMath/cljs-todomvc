@@ -1,5 +1,7 @@
 # TodoMVC
 
+An implementation of [TodoMVC](http://todomvc.com) using ClojureScript, Reagent, and core.async.
+
 ### Hacking
 
 ```
