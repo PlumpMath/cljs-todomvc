@@ -12,7 +12,8 @@
      (set-attr :class "is-dev")
      (prepend (html [:script {:type "text/javascript" :src "/js/out/goog/base.js"}]))
      ;;(prepend (html [:script {:type "text/javascript" :src "//fb.me/react-0.9.0.js"}]))
-     (append  (html [:script {:type "text/javascript"} "goog.require('todomvc.dev')"]))))
+     (append  (html [:script {:type "text/javascript"} "goog.require('todomvc.dev')"]))
+     ))
 
 (defn browser-repl []
   (piggieback/cljs-repl :repl-env (weasel/repl-env :ip "0.0.0.0" :port 9001)))

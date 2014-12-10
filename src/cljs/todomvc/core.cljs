@@ -7,6 +7,7 @@
 
 (def present? (complement clojure.string/blank?))
 (def enter-key 13)
+(def escape-key 27)
 
 (defonce actions (chan))
 (defonce new-todo-buffer (atom ""))
@@ -37,8 +38,12 @@
                    (swap! state assoc-in [:editing] (:idx action)))
       :save-todo (do
                    (reset! edit-todo-buffer "")
-                   (swap! state assoc-in [:todos (:idx action)] (:content action))
-                   (swap! state assoc-in [:editing] nil))
+                   (swap! state assoc-in [:editing] nil)
+                   (swap! state assoc-in [:todos (:idx action)] (:content action)))
+      :cancel-edit (do
+                     ;; TODO - de-dupe
+                     (swap! state assoc-in [:editing] nil)
+                     (reset! edit-todo-buffer ""))
       )))
 
 (defn add-todo-action [event]
@@ -60,6 +65,14 @@
                (present? value))
       {:idx idx :action :save-todo :content value})))
 
+(defn on-key-down [idx event]
+  (.persist event)
+  (queue-action (condp = (.-keyCode event)
+                  enter-key {:idx idx :action :save-todo :content (aget event "target" "value")}
+                  escape-key {:action :cancel-edit}
+                  nil))
+  )
+
 (defn queue-action [action]
   (when action (put! actions action)))
 
@@ -73,8 +86,6 @@
 
 (defn editing? [idx]
   (= idx (:editing @state)))
-
-(defonce foo (atom "test"))
 
 (defn todo [idx content]
   (let [editing (editing? idx)]
@@ -93,7 +104,7 @@
          [:input {:class "edit"
                   :value @edit-todo-buffer
                   :on-change #(reset! edit-todo-buffer (-> % .-target .-value))
-                  :on-key-down #(queue-action (save-todo-action idx %))
+                  :on-key-down (partial on-key-down idx)
                   }
           ])
      ]))
