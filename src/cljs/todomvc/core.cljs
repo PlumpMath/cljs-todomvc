@@ -12,7 +12,9 @@
 (defonce actions (chan))
 (defonce new-todo-buffer (atom ""))
 (defonce edit-todo-buffer (atom ""))
-(defonce state (atom {:editing null :todos ["foo", "bar", "baz", "bat"]}))
+(defonce state (atom {:editing null
+                      :todos [{:completed false :content "foo"}
+                              {:completed false :content "bar"}]}))
 
 (defn log [x]
   (.log js/console (clj->js x))
@@ -21,9 +23,12 @@
 (defn remove-nth [n coll]
   (vec (concat (subvec coll 0 n) (subvec coll (inc n)))))
 
-(defn add-todo! [state todo]
+(defn toggle-completed! [state idx]
+  (update-in state [:todos idx :completed] not))
+
+(defn add-todo! [state todo-content]
   (reset! new-todo-buffer "")
-  (update-in state [:todos] #(conj % todo)))
+  (update-in state [:todos] #(conj % {:completed false :content todo-content})))
 
 (defn remove-todo! [state idx]
   (update-in state [:todos] #(remove-nth idx %)))
@@ -87,16 +92,25 @@
 (defn editing? [idx]
   (= idx (:editing @state)))
 
-(defn todo [idx content]
-  (let [editing (editing? idx)]
-    [:li (merge {:key idx} (class-set {:editing editing}))
+(defn completed? [idx]
+   (-> @state
+       :todos
+       (get idx)
+       :completed))
+
+(defn todo-component [idx todo]
+  (let [editing (editing? idx)
+        completed (completed? idx)]
+    [:li (merge {:key idx} (class-set {:editing editing :completed completed}))
      [:div {:class "view"}
       [:input {:class "toggle"
                :type "checkbox"
+               :checked completed
+               :on-click #(swap! state toggle-completed! idx)
                }]
       [:label
-       {:on-double-click #(queue-action (edit-todo-action idx content))}
-       content]
+       {:on-double-click #(queue-action (edit-todo-action idx (:content todo)))}
+       (:content todo)]
       [:button {:class "destroy"
                 :on-click #(queue-action (destroy-todo-action idx))}]
       ]
@@ -137,7 +151,7 @@
       [:ul {:id "todo-list"}
        ;; force evaluation of lazy seq to avoid
        ;; "Reactive deref not supported in seq" warning
-       (doall (map-indexed todo (-> @state :todos)))
+       (doall (map-indexed todo-component (-> @state :todos)))
       ]
      ]]]
    [:footer {:id "info"}
