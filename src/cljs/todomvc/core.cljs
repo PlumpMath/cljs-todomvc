@@ -12,7 +12,7 @@
 (defonce actions (chan))
 (defonce new-todo-buffer (atom ""))
 (defonce edit-todo-buffer (atom ""))
-(defonce state (atom {:editing 0 :todos ["foo", "bar", "baz", "bat"]}))
+(defonce state (atom {:editing null :todos ["foo", "bar", "baz", "bat"]}))
 
 (defn log [x]
   (.log js/console (clj->js x))
