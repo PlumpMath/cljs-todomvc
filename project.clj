@@ -26,7 +26,11 @@
 
   :uberjar-name "todomvc.jar"
 
-  :cljsbuild {:builds {:app {:source-paths ["src/cljs"]
+  :cljsbuild {:builds {
+                       :tests { :source-paths ["src/cljs" "test/cljs"]
+                               :compiler {:output-to "target/test/js/tests.js"
+                                          :optimizations :whitespace :pretty-print true}}
+                       :app {:source-paths ["src/cljs"]
                              :compiler {:output-to     "resources/public/js/app.js"
                                         :output-dir    "resources/public/js/out"
                                         :source-map    "resources/public/js/out.js.map"
@@ -39,7 +43,10 @@
                                   :nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
 
                    :source-paths ["src/user"]
-                   :plugins [[lein-figwheel "0.1.4-SNAPSHOT"]]
+                   :plugins [
+                             [lein-figwheel "0.1.4-SNAPSHOT"]
+                             [com.cemerick/clojurescript.test "0.3.3"]
+                             ]
 
                    :figwheel {:http-server-root "public"
                               :port 3449
@@ -47,7 +54,12 @@
 
                    :env {:is-dev true}
 
-                   :cljsbuild {:builds {:app {:source-paths ["env/dev/cljs"]}}}}
+                   :cljsbuild {:builds {:app {:source-paths ["env/dev/cljs"]}}
+                               :test-commands {"unit-tests" ["phantomjs"
+                                                             :runner
+                                                             "target/test/js/tests.js"
+                                                             ]}
+                               }}
 
              :uberjar {:hooks [leiningen.cljsbuild]
                        :env {:production true}
