@@ -14,7 +14,16 @@
 (defonce edit-todo-buffer (atom ""))
 (defonce state (atom {:editing null
                       :todos [{:completed false :content "foo"}
-                              {:completed false :content "bar"}]}))
+                              {:completed false :content "bar"}
+                              {:completed true :content "baz"}]
+                      }))
+
+(add-watch state :print
+       (fn [_ _ old-state new-state]
+         (log "----- start state -----")
+         (log new-state)
+         (log "----- end state -----")
+         ))
 
 (defn log [x]
   (.log js/console (clj->js x))
@@ -49,6 +58,25 @@
                      ;; TODO - de-dupe
                      (swap! state assoc-in [:editing] nil)
                      (reset! edit-todo-buffer ""))
+      :toggle-all (do
+                    (log "foo3")
+                    (swap! state
+                           update-in
+                           [:todos]
+                           (fn [todos]
+                             (map (fn [todo]
+                                    (log todo)
+                                    (log (update-in todo
+                                               [:completed] not))
+                                  )
+                             todos)))
+                    ;;        (fn [todos]
+                    ;;          (map (fn [todo]
+                    ;;                 (update-in todo
+                    ;;                   [:completed] not)
+                    ;;           todos))
+                    ;;          ))
+                    )
       )))
 
 (defn add-todo-action [event]
@@ -56,6 +84,9 @@
     (when (and (= enter-key (.-keyCode event))
                (present? value))
       {:action :add-todo :value value})))
+
+(defn toggle-all [event]
+  {:action :toggle-all})
 
 (defn destroy-todo-action [idx]
   {:idx idx :action :destroy-todo})
@@ -95,10 +126,11 @@
 (defn completed? [idx]
    (-> @state
        :todos
-       (get idx)
+       (nth idx)
        :completed))
 
 (defn todo-component [idx todo]
+  (log (str "rendering todo " idx ", is completed... " (-> @state :todos (nth idx))))
   (let [editing (editing? idx)
         completed (completed? idx)]
     [:li (merge {:key idx} (class-set {:editing editing :completed completed}))
@@ -147,6 +179,7 @@
       ]
      [:section {:id "main"}
       [:input {:id "toggle-all"
+               :on-change #(queue-action (toggle-all %))
                :type "checkbox"}]
       [:ul {:id "todo-list"}
        ;; force evaluation of lazy seq to avoid
