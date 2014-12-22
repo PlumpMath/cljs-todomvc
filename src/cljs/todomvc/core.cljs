@@ -122,6 +122,12 @@
        (nth idx)
        :completed))
 
+(defn all-completed? []
+  (every? 
+   :completed
+   (-> @state :todos)
+  ))
+
 (defn todo-component [idx todo]
   (let [editing (editing? idx)
         completed (completed? idx)]
@@ -171,6 +177,7 @@
       ]
      [:section {:id "main"}
       [:input {:id "toggle-all"
+               :checked (all-completed?)
                :on-change #(queue-action (set-all %))
                :type "checkbox"}]
       [:ul {:id "todo-list"}
