@@ -58,25 +58,17 @@
                      ;; TODO - de-dupe
                      (swap! state assoc-in [:editing] nil)
                      (reset! edit-todo-buffer ""))
-      :toggle-all (do
-                    (log "foo3")
-                    (swap! state
-                           update-in
-                           [:todos]
-                           (fn [todos]
-                             (map (fn [todo]
-                                    (log todo)
-                                    (log (update-in todo
-                                               [:completed] not))
-                                  )
-                             todos)))
-                    ;;        (fn [todos]
-                    ;;          (map (fn [todo]
-                    ;;                 (update-in todo
-                    ;;                   [:completed] not)
-                    ;;           todos))
-                    ;;          ))
-                    )
+      :set-all (do
+                 (swap! state
+                        update-in
+                        [:todos]
+                        (fn [todos]
+                          (vec (map (fn [todo]
+                                      (assoc todo
+                                        :completed (:value action))
+                                      )
+                                    todos))))
+                 )
       )))
 
 (defn add-todo-action [event]
@@ -85,8 +77,9 @@
                (present? value))
       {:action :add-todo :value value})))
 
-(defn toggle-all [event]
-  {:action :toggle-all})
+(defn set-all [event]
+  (let [checked (aget event "target" "checked")]
+    {:action :set-all :value checked}))
 
 (defn destroy-todo-action [idx]
   {:idx idx :action :destroy-todo})
@@ -130,7 +123,6 @@
        :completed))
 
 (defn todo-component [idx todo]
-  (log (str "rendering todo " idx ", is completed... " (-> @state :todos (nth idx))))
   (let [editing (editing? idx)
         completed (completed? idx)]
     [:li (merge {:key idx} (class-set {:editing editing :completed completed}))
@@ -138,7 +130,7 @@
       [:input {:class "toggle"
                :type "checkbox"
                :checked completed
-               :on-click #(swap! state toggle-completed! idx)
+               :on-change #(swap! state toggle-completed! idx)
                }]
       [:label
        {:on-double-click #(queue-action (edit-todo-action idx (:content todo)))}
@@ -179,7 +171,7 @@
       ]
      [:section {:id "main"}
       [:input {:id "toggle-all"
-               :on-change #(queue-action (toggle-all %))
+               :on-change #(queue-action (set-all %))
                :type "checkbox"}]
       [:ul {:id "todo-list"}
        ;; force evaluation of lazy seq to avoid
